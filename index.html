@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Fitness-Toolkit</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Fitness Toolkit</title>
+
+  <!-- Inter font (clean UI) -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Tailwind CDN (keeps all your utility classes working) -->
+  <script>
+    window.tailwind = window.tailwind || {};
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+          keyframes: {
+            fadeUp: { '0%': {opacity:0, transform:'translateY(8px) scale(.98)'}, '100%': {opacity:1, transform:'translateY(0) scale(1)'} },
+            shimmer: { '0%': {backgroundPosition:'-468px 0'}, '100%': {backgroundPosition:'468px 0'} },
+            floaty: { '0%': { transform:'translateY(0px)'}, '50%': { transform:'translateY(-8px)'}, '100%': { transform:'translateY(0px)'} }
+          },
+          animation: {
+            fadeUp: 'fadeUp .4s cubic-bezier(.2,.8,.2,1) both',
+            floaty: 'floaty 6s ease-in-out infinite',
+          },
+          boxShadow: {
+            card: '0 8px 24px rgba(2, 6, 23, .06)'
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Your custom layer (tooltip, inputs, micro-interactions, extra motion) -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+  <!-- Ambient background blobs (pure CSS, subtle motion) -->
+  <div class="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+    <div class="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-gradient-to-br from-amber-200 to-pink-200 blur-3xl opacity-60 animate-floaty"></div>
+    <div class="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-gradient-to-br from-emerald-200 to-sky-200 blur-3xl opacity-60 animate-floaty" style="animation-delay: -2.2s;"></div>
+  </div>
+
+  <main id="root" class="relative"></main>
+
+  <noscript>
+    <div class="max-w-xl mx-auto mt-12 p-4 rounded-xl bg-white/80 border">
+      Please enable JavaScript to use the Fitness Toolkit.
+    </div>
+  </noscript>
+
+  <!-- React + ReactDOM UMD -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+  <!-- Babel (so you can keep using type="text/babel" locally) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Your app logic -->
+  <script type="text/babel" src="script.js"></script>
+</body>
+</html>
+<!-- partial -->
+  <script src='https://unpkg.com/react@18/umd/react.development.js'></script>
+<script src='https://unpkg.com/react-dom@18/umd/react-dom.development.js'></script><script  src="./script.js"></script>
+
+</body>
+</html>
