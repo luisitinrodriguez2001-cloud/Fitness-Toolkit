@@ -767,6 +767,7 @@ function InfoPanel() {var _item$sources;
 ========================================================= */
 function App() {
   const [view, setView] = useState('Profile');
+  const [wtTab, setWtTab] = useState('wt-exercises');
   const [unit, setUnit] = useState('imperial'); // imperial shows ft/in & lb
   const [sex, setSex] = useState('male');
   const [age, setAge] = useState('');
@@ -822,6 +823,10 @@ function App() {
       const id = setTimeout(() => setRecReady(true), 450);
       return () => clearTimeout(id);
     }
+  }, [view]);
+
+  useEffect(() => {
+    if (view === 'Workout Tracker') setWtTab('wt-exercises');
   }, [view]);
 
   // Unit sync on toggle
@@ -1401,7 +1406,29 @@ function App() {
 
 
 
-    view === 'Workout Tracker' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Section, { id: toId('Workout Tracker'), title: 'Workout Tracker' }, /*#__PURE__*/React.createElement("p", null, "Track your workouts here."))),
+    view === 'Workout Tracker' && /*#__PURE__*/React.createElement(Section, {
+      id: toId('Workout Tracker'),
+      title: 'Workout Tracker',
+      right: /*#__PURE__*/React.createElement("div", { className: "flex gap-2" }, /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 border rounded" }, "Export JSON"), /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 border rounded" }, "Import JSON"), /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 border rounded" }, "Export CSV"))
+    }, /*#__PURE__*/React.createElement("div", { className: "mb-4 flex gap-2", role: "tablist" }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => setWtTab('wt-exercises'),
+      className: (wtTab === 'wt-exercises' ? 'bg-slate-900 text-white ' : 'bg-white hover:bg-slate-50 ') + 'border rounded px-3 py-1 text-sm',
+      "data-target": "wt-exercises",
+      role: "tab",
+      "aria-selected": wtTab === 'wt-exercises'
+    }, "Exercises"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setWtTab('wt-programs'),
+      className: (wtTab === 'wt-programs' ? 'bg-slate-900 text-white ' : 'bg-white hover:bg-slate-50 ') + 'border rounded px-3 py-1 text-sm',
+      "data-target": "wt-programs",
+      role: "tab",
+      "aria-selected": wtTab === 'wt-programs'
+    }, "Programs"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setWtTab('wt-log'),
+      className: (wtTab === 'wt-log' ? 'bg-slate-900 text-white ' : 'bg-white hover:bg-slate-50 ') + 'border rounded px-3 py-1 text-sm',
+      "data-target": "wt-log",
+      role: "tab",
+      "aria-selected": wtTab === 'wt-log'
+    }, "Log \u0026 Progress")), /*#__PURE__*/React.createElement("div", { id: "wt-exercises", className: wtTab === 'wt-exercises' ? '' : 'hidden' }), /*#__PURE__*/React.createElement("div", { id: "wt-programs", className: wtTab === 'wt-programs' ? '' : 'hidden' }), /*#__PURE__*/React.createElement("div", { id: "wt-log", className: wtTab === 'wt-log' ? '' : 'hidden' })),
 
     view === 'Info' && /*#__PURE__*/
     React.createElement(React.Fragment, null, /*#__PURE__*/
