@@ -1,0 +1,232 @@
+/* Base polish */
+:root{
+  --ring: 0 0 0 3px rgba(59, 130, 246, .35);
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-in: cubic-bezier(.4,0,1,1);
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  text-rendering: optimizeLegibility;
+}
+
+/* Card container used by <Section> */
+.card {
+  background: rgba(255,255,255,.75);
+  backdrop-filter: saturate(140%) blur(6px);
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(2, 6, 23, .04);
+  animation: fadeUp .35s var(--ease-out) both;
+}
+
+/* Inputs / selects */
+.field{
+  width: 100%;
+  appearance: none;
+  background: white;
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 12px;
+  padding: .55rem .75rem;
+  font-size: 0.95rem;
+  line-height: 1.15rem;
+  transition: border-color .2s var(--ease-out), box-shadow .2s var(--ease-out), transform .06s var(--ease-out);
+}
+.field:focus{
+  outline: none;
+  border-color: rgb(99, 102, 241);
+  box-shadow: var(--ring);
+}
+.field:active{ transform: translateY(0.5px); }
+
+/* Tiny keyboard style button (Reset) */
+.kbd{
+  background: white;
+  border: 1px solid rgba(15,23,42,.12);
+  padding: .25rem .5rem;
+  border-radius: .5rem;
+  font-size: .8rem;
+  line-height: 1rem;
+  box-shadow: inset 0 -1px rgba(0,0,0,.03);
+  transition: transform .07s var(--ease-out), box-shadow .2s var(--ease-out);
+}
+.kbd:hover{ box-shadow: 0 6px 18px rgba(2,6,23,.08); }
+.kbd:active{ transform: translateY(1px) scale(.99); }
+
+/* Icon button + ripple */
+.icon-btn{
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(15,23,42,.08);
+  background: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(2,6,23,.04);
+  transition: transform .08s var(--ease-out), box-shadow .2s var(--ease-out);
+}
+.icon-btn:hover{ box-shadow: 0 6px 18px rgba(2,6,23,.08); }
+.icon-btn:active{ transform: translateY(1px) scale(.98); }
+.icon-btn::after{
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  background: radial-gradient(circle at center, rgba(15,23,42,.08), transparent 55%);
+  opacity:0; transform: scale(0);
+  transition: transform .25s var(--ease-out), opacity .25s var(--ease-out);
+}
+.icon-btn:active::after{ opacity:1; transform: scale(1.4); }
+
+/* Tooltip used by <Info> */
+.icon-btn .tooltip{
+  pointer-events: none;
+  position: absolute;
+  top: 110%; left: 50%;
+  transform: translateX(-50%) translateY(6px) scale(.98);
+  min-width: 200px;
+  max-width: 280px;
+  background: white;
+  border: 1px solid rgba(15,23,42,.12);
+  padding: .6rem .7rem;
+  border-radius: .6rem;
+  box-shadow: 0 18px 40px rgba(2,6,23,.12);
+  opacity: 0;
+  transition:
+    opacity .18s var(--ease-out),
+    transform .18s var(--ease-out);
+  z-index: 40;
+}
+.icon-btn:hover .tooltip,
+.icon-btn:focus-visible .tooltip{
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateX(-50%) translateY(10px) scale(1);
+}
+.tooltip-content{
+  display:block;
+  font-size: .78rem;
+  line-height: 1.05rem;
+  color: rgb(71,85,105);
+  margin-bottom: .35rem;
+}
+.icon-btn .tooltip a{
+  font-size: .78rem;
+  text-decoration: underline;
+  color: rgb(2,132,199);
+}
+
+/* Shimmer / skeleton (fallback if Tailwind animate-pulse not present) */
+.animate-pulse:not(.tw){ /* keep if Tailwind is missing */
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 37%, #e5e7eb 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: .5rem;
+  height: 1rem;
+}
+@keyframes shimmer{
+  0%{ background-position: -400px 0; }
+  100%{ background-position: 400px 0; }
+}
+
+/* Subtle float/tilt on cards (makes the page feel “alive”) */
+.card:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(2,6,23,.08);
+  transition: box-shadow .2s var(--ease-out), transform .2s var(--ease-out);
+}
+
+/* Badge chips */
+.badge{
+  display:inline-flex; align-items:center; gap:.35rem;
+  padding: .2rem .5rem;
+  border-radius: 999px;
+  background: white;
+  border: 1px solid rgba(15,23,42,.1);
+}
+
+/* Mono number readouts (kcal etc.) */
+.mono{ font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* Small page-level enter animation for main sections */
+section.card { animation: fadeUp .42s var(--ease-out) both; }
+@keyframes fadeUp{
+  0% { opacity:0; transform: translateY(10px) scale(.985); }
+  100% { opacity:1; transform: translateY(0) scale(1); }
+}
+
+/* Accessibility: reduce motion */
+@media (prefers-reduced-motion: reduce){
+  .card,
+  .animate-pulse,
+  .icon-btn::after,
+  .icon-btn .tooltip{
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Tiny helpers for smoother links/buttons focus */
+a, button, select, input {
+  -webkit-tap-highlight-color: transparent;
+}
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible{
+  outline: none;
+  box-shadow: var(--ring);
+  border-color: rgb(99, 102, 241);
+}
+
+/* Optional: tab buttons feel more “pressable” */
+button[type="button"], .card button, .card .kbd {
+  transition: transform .06s var(--ease-out), box-shadow .2s var(--ease-out);
+}
+button[type="button"]:active { transform: translateY(1px); }
+
+/* --- Bouncy profile icon --- */
+@keyframes bobble {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-6px) rotate(0.5deg); }
+}
+.bouncy {
+  animation: bobble 1200ms cubic-bezier(.28,.84,.42,1) infinite;
+  will-change: transform;
+}
+.bouncy:hover { animation-duration: 900ms; }
+
+/* --- Smooth content reveal for Info panel --- */
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-slide-in {
+  animation: fadeSlide 220ms cubic-bezier(.2,.7,.2,1);
+}
+
+/* Layout helpers */
+.subtabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.5rem;
+}
+
+[hidden]{
+  display:none !important;
+}
+
+.card-grid{
+  display:grid;
+  gap:1rem;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+}
+
+.editor{
+  background:white;
+  border:1px solid rgba(15,23,42,.12);
+  border-radius:12px;
+  padding:1rem;
+}
