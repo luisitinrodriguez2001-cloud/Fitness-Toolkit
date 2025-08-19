@@ -1410,7 +1410,7 @@ function App() {
       id: toId('Workout Tracker'),
       title: 'Workout Tracker',
       right: /*#__PURE__*/React.createElement("div", { className: "flex gap-2" }, /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 border rounded" }, "Export JSON"), /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 border rounded" }, "Import JSON"), /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 border rounded" }, "Export CSV"))
-    }, /*#__PURE__*/React.createElement("div", { className: "mb-4 flex gap-2", role: "tablist" }, /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("div", { className: "subtabs mb-4", role: "tablist" }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setWtTab('wt-exercises'),
       className: (wtTab === 'wt-exercises' ? 'bg-slate-900 text-white ' : 'bg-white hover:bg-slate-50 ') + 'border rounded px-3 py-1 text-sm',
       "data-target": "wt-exercises",
@@ -1428,7 +1428,20 @@ function App() {
       "data-target": "wt-log",
       role: "tab",
       "aria-selected": wtTab === 'wt-log'
-    }, "Log \u0026 Progress")), /*#__PURE__*/React.createElement("div", { id: "wt-exercises", className: wtTab === 'wt-exercises' ? '' : 'hidden' }), /*#__PURE__*/React.createElement("div", { id: "wt-programs", className: wtTab === 'wt-programs' ? '' : 'hidden' }), /*#__PURE__*/React.createElement("div", { id: "wt-log", className: wtTab === 'wt-log' ? '' : 'hidden' })),
+      }, "Log \u0026 Progress")),
+    /*#__PURE__*/React.createElement("div", {
+      id: "wt-exercises",
+      className: "card-grid",
+      hidden: wtTab !== 'wt-exercises'
+    }),
+    /*#__PURE__*/React.createElement("div", {
+      id: "wt-programs",
+      hidden: wtTab !== 'wt-programs'
+    }, /*#__PURE__*/React.createElement("div", { className: "card-grid mb-4" }), /*#__PURE__*/React.createElement("div", { className: "editor" })),
+    /*#__PURE__*/React.createElement("div", {
+      id: "wt-log",
+      hidden: wtTab !== 'wt-log'
+    })),
 
     view === 'Info' && /*#__PURE__*/
     React.createElement(React.Fragment, null, /*#__PURE__*/
@@ -1476,3 +1489,4 @@ function App() {
    Mount
 ========================================================= */
 ReactDOM.createRoot(document.getElementById('root')).render( /*#__PURE__*/React.createElement(App, null));
+
