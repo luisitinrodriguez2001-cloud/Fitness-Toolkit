@@ -141,8 +141,8 @@ const CIT = {
 /* =========================================================
    Small UI bits
 ========================================================= */
-const Section = ({ title, right, children }) => /*#__PURE__*/
-React.createElement("section", { className: "card p-4 mb-4" }, /*#__PURE__*/
+const Section = ({ id, title, right, children }) => /*#__PURE__*/
+React.createElement("section", { id, className: "card p-4 mb-4" }, /*#__PURE__*/
 React.createElement("header", { className: "flex items-center justify-between mb-3" }, /*#__PURE__*/
 React.createElement("h2", { className: "text-lg font-semibold" }, title),
 right),
@@ -811,6 +811,9 @@ function App() {
   useEffect(() => {const id = setInterval(() => setFactIdx(i => (i + 1) % FUN.length), 10000);return () => clearInterval(id);}, []);
   const shuffleFact = () => setFactIdx(i => (i + 1) % FUN.length);
 
+  const VIEWS = ['Profile', 'Energy & Goals', 'Unlock Potential', 'Workout Tracker', 'Info'];
+  const toId = v => 'view-' + v.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
   // Reveal for the recommendation block
   const [recReady, setRecReady] = useState(false);
   useEffect(() => {
@@ -957,13 +960,17 @@ function App() {
 
     React.createElement(Section, { title: "Pick a Tool", right: /*#__PURE__*/React.createElement("span", { className: "text-xs text-slate-500" }, "Everything updates automatically") }, /*#__PURE__*/
     React.createElement("div", { className: "grid grid-cols-4 gap-2" },
-    ['Profile', 'Energy & Goals', 'Unlock Potential', 'Info'].map((v) => /*#__PURE__*/
+    VIEWS.map((v) => /*#__PURE__*/
     React.createElement("button", {
       key: v,
       onClick: () => setView(v),
       className:
       (view === v ? 'bg-slate-900 text-white ' : 'bg-white hover:bg-slate-50 ') +
-      'border rounded-2xl px-3 py-2 text-left transition-colors' },
+      'border rounded-2xl px-3 py-2 text-left transition-colors',
+      "data-target": toId(v),
+      role: "tab",
+      "aria-selected": view === v
+    },
 
 
     v))), /*#__PURE__*/
@@ -1393,6 +1400,8 @@ function App() {
 
 
 
+
+    view === 'Workout Tracker' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Section, { id: toId('Workout Tracker'), title: 'Workout Tracker' }, /*#__PURE__*/React.createElement("p", null, "Track your workouts here."))),
 
     view === 'Info' && /*#__PURE__*/
     React.createElement(React.Fragment, null, /*#__PURE__*/
