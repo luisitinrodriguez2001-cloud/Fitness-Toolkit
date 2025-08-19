@@ -1011,7 +1011,8 @@ function App() {
 
 
     React.createElement(Section, { title: "Pick a Tool", right: /*#__PURE__*/React.createElement("span", { className: "text-xs text-slate-500" }, "Everything updates automatically") }, /*#__PURE__*/
-    React.createElement("div", { className: "grid grid-cols-4 gap-2" },
+    // Display all view tabs including Workout Tracker
+    React.createElement("div", { className: "grid grid-cols-5 gap-2" },
     VIEWS.map((v) => /*#__PURE__*/
     React.createElement("button", {
       key: v,
