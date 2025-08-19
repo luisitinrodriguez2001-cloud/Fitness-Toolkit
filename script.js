@@ -1,6 +1,53 @@
 const { useState, useMemo, useEffect, useRef } = React;
 
 /* =========================================================
+   Workout Store (localStorage)
+========================================================= */
+const FT_STORE_KEY = 'ft_workout_v1';
+const emptyStore = () => ({
+  exercises: [],
+  programs: [],
+  workouts: [],
+  prs: {}
+});
+
+const loadWorkoutStore = () => {
+  try {
+    const raw = localStorage.getItem(FT_STORE_KEY);
+    if (!raw) return emptyStore();
+    const data = JSON.parse(raw);
+    return {
+      exercises: Array.isArray(data.exercises) ? data.exercises : [],
+      programs: Array.isArray(data.programs) ? data.programs : [],
+      workouts: Array.isArray(data.workouts) ? data.workouts : [],
+      prs: data.prs && typeof data.prs === 'object' && !Array.isArray(data.prs) ? data.prs : {}
+    };
+  } catch (err) {
+    console.error('Failed to load workout store', err);
+    return emptyStore();
+  }
+};
+
+const saveWorkoutStore = updater => {
+  const current = loadWorkoutStore();
+  const next = typeof updater === 'function' ? updater(current) : updater;
+  const safe = {
+    exercises: Array.isArray(next.exercises) ? next.exercises : [],
+    programs: Array.isArray(next.programs) ? next.programs : [],
+    workouts: Array.isArray(next.workouts) ? next.workouts : [],
+    prs: next.prs && typeof next.prs === 'object' && !Array.isArray(next.prs) ? next.prs : {}
+  };
+  localStorage.setItem(FT_STORE_KEY, JSON.stringify(safe));
+  return safe;
+};
+
+window.ftWorkoutStore = {
+  load: loadWorkoutStore,
+  save: saveWorkoutStore,
+  key: FT_STORE_KEY
+};
+
+/* =========================================================
    Utils
 ========================================================= */
 const lbToKg = lb => lb * 0.45359237;
@@ -997,7 +1044,7 @@ function App() {
 
     view === 'Profile' && /*#__PURE__*/
     React.createElement(React.Fragment, null, /*#__PURE__*/
-    React.createElement(Section, { title: "Profile", right: /*#__PURE__*/React.createElement("button", { className: "kbd", onClick: () => {localStorage.clear();location.reload();} }, "Reset") }, /*#__PURE__*/
+    React.createElement(Section, { title: "Profile", right: /*#__PURE__*/React.createElement("button", { className: "kbd", onClick: () => {localStorage.removeItem(ftWorkoutStore.key);location.reload();} }, "Reset") }, /*#__PURE__*/
     React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" }, /*#__PURE__*/
     React.createElement("div", null, /*#__PURE__*/
     React.createElement("label", { className: "block text-sm font-medium" }, "Sex"), /*#__PURE__*/
