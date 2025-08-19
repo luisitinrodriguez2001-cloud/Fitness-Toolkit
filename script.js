@@ -957,6 +957,13 @@ function App() {
   const [exSearch, setExSearch] = useState('');
   const [exErr, setExErr] = useState('');
 
+  // Workout programs
+  const [programs, setPrograms] = useState(() => ftWorkoutStore.load().programs);
+  const [progName, setProgName] = useState('');
+  const [progWeeks, setProgWeeks] = useState('');
+  const [progDays, setProgDays] = useState('');
+  const [editingProgId, setEditingProgId] = useState(null);
+
   const filteredExercises = useMemo(() => {
     const term = exSearch.trim().toLowerCase();
     return exercises
@@ -1001,6 +1008,157 @@ function App() {
     ftWorkoutStore.save(store => ({ ...store, exercises: next }));
     setExercises(next);
     window.dispatchEvent(new Event('ft-exercises-changed'));
+  };
+
+  // Program helpers
+  const updatePrograms = next => {
+    ftWorkoutStore.save(store => ({ ...store, programs: next }));
+    setPrograms(next);
+  };
+
+  const handleCreateProgram = e => {
+    e.preventDefault();
+    const name = progName.trim();
+    const w = parseInt(progWeeks, 10);
+    const d = parseInt(progDays, 10);
+    if (!name || !w || !d) return;
+    const plan = Array.from({ length: w }, () => Array.from({ length: d }, () => []));
+    const program = { id: uid(), name, weeks: w, days: d, plan };
+    const next = [...programs, program];
+    updatePrograms(next);
+    setProgName('');
+    setProgWeeks('');
+    setProgDays('');
+    setEditingProgId(program.id);
+  };
+
+  const handleEditProgram = id => setEditingProgId(id);
+
+  const handleDeleteProgram = id => {
+    const next = programs.filter(p => p.id !== id);
+    updatePrograms(next);
+    if (editingProgId === id) setEditingProgId(null);
+  };
+
+  const updateProgram = (id, updater) => {
+    const next = programs.map(p => p.id === id ? updater(p) : p);
+    updatePrograms(next);
+  };
+
+  const handleAddBlock = (wIdx, dIdx) => {
+    updateProgram(editingProgId, p => {
+      const plan = p.plan.map((w, wi) => w.map((day, di) => {
+        if (wi === wIdx && di === dIdx) {
+          return [...day, { id: uid(), exercise: '', sets: '', reps: '', perc: '', rpe: '', notes: '' }];
+        }
+        return day;
+      }));
+      return { ...p, plan };
+    });
+  };
+
+  const handleRemoveBlock = (wIdx, dIdx, blockId) => {
+    updateProgram(editingProgId, p => {
+      const plan = p.plan.map((w, wi) => w.map((day, di) => {
+        if (wi === wIdx && di === dIdx) {
+          return day.filter(b => b.id !== blockId);
+        }
+        return day;
+      }));
+      return { ...p, plan };
+    });
+  };
+
+  const handleBlockChange = (wIdx, dIdx, blockId, field, value) => {
+    updateProgram(editingProgId, p => {
+      const plan = p.plan.map((w, wi) => w.map((day, di) => {
+        if (wi === wIdx && di === dIdx) {
+          return day.map(b => b.id === blockId ? { ...b, [field]: value } : b);
+        }
+        return day;
+      }));
+      return { ...p, plan };
+    });
+  };
+
+  const editingProgram = programs.find(p => p.id === editingProgId);
+
+  const renderProgramList = () => /*#__PURE__*/React.createElement(React.Fragment, null,
+    /*#__PURE__*/React.createElement("form", { onSubmit: handleCreateProgram, className: "card p-4 space-y-2" }, /*#__PURE__*/React.createElement("input", {
+      className: "field",
+      placeholder: "Program name",
+      value: progName,
+      onChange: e => setProgName(e.target.value)
+    }), /*#__PURE__*/React.createElement("input", {
+      className: "field",
+      type: "number",
+      min: "1",
+      placeholder: "Weeks",
+      value: progWeeks,
+      onChange: e => setProgWeeks(e.target.value)
+    }), /*#__PURE__*/React.createElement("input", {
+      className: "field",
+      type: "number",
+      min: "1",
+      placeholder: "Days per week",
+      value: progDays,
+      onChange: e => setProgDays(e.target.value)
+    }), /*#__PURE__*/React.createElement("div", { className: "text-right" }, /*#__PURE__*/React.createElement("button", { type: "submit", className: "kbd" }, "Create"))), programs.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", { className: "font-medium mb-2" }, "Saved Programs"), /*#__PURE__*/React.createElement("div", { className: "card-grid" }, programs.map(p => /*#__PURE__*/React.createElement("div", { key: p.id, className: "card p-4 space-y-2" }, /*#__PURE__*/React.createElement("div", { className: "font-medium" }, p.name), /*#__PURE__*/React.createElement("div", { className: "text-xs text-slate-600" }, `${p.weeks}w x ${p.days}d`), /*#__PURE__*/React.createElement("div", { className: "flex gap-2 mt-2" }, /*#__PURE__*/React.createElement("button", { type: "button", className: "px-2 py-1 border rounded text-xs", onClick: () => handleEditProgram(p.id) }, "Edit"), /*#__PURE__*/React.createElement("button", { type: "button", className: "px-2 py-1 border rounded text-xs", onClick: () => handleDeleteProgram(p.id) }, "Delete")))))));
+
+  const renderBlock = (block, wIdx, dIdx) => /*#__PURE__*/React.createElement("div", { key: block.id, className: "space-y-1" }, /*#__PURE__*/React.createElement("div", { className: "flex gap-1" }, /*#__PURE__*/React.createElement("select", {
+    className: "field flex-1",
+    value: block.exercise,
+    onChange: e => handleBlockChange(wIdx, dIdx, block.id, 'exercise', e.target.value)
+  }, /*#__PURE__*/React.createElement("option", { value: "" }, "Select exercise"), exercises.map(ex => /*#__PURE__*/React.createElement("option", { key: ex.id, value: ex.name }, ex.name))), /*#__PURE__*/React.createElement("input", {
+    className: "field w-16",
+    placeholder: "Sets",
+    value: block.sets,
+    onChange: e => handleBlockChange(wIdx, dIdx, block.id, 'sets', e.target.value)
+  }), /*#__PURE__*/React.createElement("input", {
+    className: "field w-16",
+    placeholder: "Reps",
+    value: block.reps,
+    onChange: e => handleBlockChange(wIdx, dIdx, block.id, 'reps', e.target.value)
+  })), /*#__PURE__*/React.createElement("div", { className: "flex gap-1 items-start" }, /*#__PURE__*/React.createElement("input", {
+    className: "field w-20",
+    placeholder: "%1RM",
+    value: block.perc,
+    onChange: e => handleBlockChange(wIdx, dIdx, block.id, 'perc', e.target.value)
+  }), /*#__PURE__*/React.createElement("input", {
+    className: "field w-16",
+    placeholder: "RPE",
+    value: block.rpe,
+    onChange: e => handleBlockChange(wIdx, dIdx, block.id, 'rpe', e.target.value)
+  }), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "icon-btn",
+    onClick: () => handleRemoveBlock(wIdx, dIdx, block.id)
+  }, "\u2715")), /*#__PURE__*/React.createElement("textarea", {
+    className: "field",
+    placeholder: "Notes",
+    rows: "2",
+    value: block.notes,
+    onChange: e => handleBlockChange(wIdx, dIdx, block.id, 'notes', e.target.value)
+  }));
+
+  const renderProgramEditor = () => {
+    if (!editingProgram) return null;
+    return /*#__PURE__*/React.createElement("div", { className: "space-y-4" }, /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" }, /*#__PURE__*/React.createElement("input", {
+      className: "field flex-1",
+      value: editingProgram.name,
+      onChange: e => updateProgram(editingProgId, p => ({ ...p, name: e.target.value }))
+    }), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      className: "px-2 py-1 border rounded text-xs",
+      onClick: () => setEditingProgId(null)
+    }, "Back")), /*#__PURE__*/React.createElement("div", {
+      className: "grid gap-4",
+      style: { gridTemplateColumns: `repeat(${editingProgram.days}, minmax(0,1fr))` }
+    }, editingProgram.plan.flatMap((week, wIdx) => week.map((day, dIdx) => /*#__PURE__*/React.createElement("fieldset", { key: `${wIdx}-${dIdx}`, className: "p-2 border rounded space-y-2" }, /*#__PURE__*/React.createElement("legend", { className: "text-sm font-medium" }, `Week ${wIdx + 1} Day ${dIdx + 1}`), day.map(block => renderBlock(block, wIdx, dIdx)), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      className: "px-2 py-1 border rounded text-xs",
+      onClick: () => handleAddBlock(wIdx, dIdx)
+    }, "Add Block"))))));
   };
 
   // Fun facts
@@ -1213,7 +1371,7 @@ function App() {
 
     React.createElement(Section, { title: "Pick a Tool", right: /*#__PURE__*/React.createElement("span", { className: "text-xs text-slate-500" }, "Everything updates automatically") }, /*#__PURE__*/
     // Display all view tabs including Workout Tracker
-    React.createElement("div", { className: "grid grid-cols-5 gap-2" },
+    React.createElement("div", { className: "grid gap-2", style: { gridTemplateColumns: `repeat(${VIEWS.length}, minmax(0,1fr))` } },
     VIEWS.map((v) => /*#__PURE__*/
     React.createElement("button", {
       key: v,
@@ -1752,8 +1910,9 @@ function App() {
     ),
     /*#__PURE__*/React.createElement("div", {
       id: "wt-programs",
-      hidden: wtTab !== 'wt-programs'
-    }, /*#__PURE__*/React.createElement("div", { className: "card-grid mb-4" }), /*#__PURE__*/React.createElement("div", { className: "editor" })),
+      hidden: wtTab !== 'wt-programs',
+      className: "space-y-4"
+    }, editingProgId ? renderProgramEditor() : renderProgramList()),
     /*#__PURE__*/React.createElement("div", {
       id: "wt-log",
       hidden: wtTab !== 'wt-log'
