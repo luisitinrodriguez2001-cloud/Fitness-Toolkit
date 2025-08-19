@@ -947,6 +947,62 @@ function App() {
   const [goalType, setGoalType] = useState(''); // '', 'cut', 'bulk', 'maintain'
   const [goalRate, setGoalRate] = useState(''); // per week
 
+  // Workout tracker exercises
+  const [exercises, setExercises] = useState(() => ftWorkoutStore.load().exercises);
+  const [exName, setExName] = useState('');
+  const [exMuscles, setExMuscles] = useState('');
+  const [exUnit, setExUnit] = useState('lb');
+  const [exTags, setExTags] = useState('');
+  const [exNotes, setExNotes] = useState('');
+  const [exSearch, setExSearch] = useState('');
+  const [exErr, setExErr] = useState('');
+
+  const filteredExercises = useMemo(() => {
+    const term = exSearch.trim().toLowerCase();
+    return exercises
+      .filter(ex => {
+        if (!term) return true;
+        const name = ex.name.toLowerCase();
+        const tags = (ex.tags || []).join(' ').toLowerCase();
+        return name.includes(term) || tags.includes(term);
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [exercises, exSearch]);
+
+  const handleAddExercise = e => {
+    e.preventDefault();
+    const name = exName.trim();
+    if (!name) {
+      setExErr('Name is required');
+      return;
+    }
+    const exercise = {
+      id: Date.now().toString(36),
+      name,
+      muscleGroups: exMuscles.split(',').map(s => s.trim()).filter(Boolean),
+      unit: exUnit,
+      tags: exTags.split(',').map(s => s.trim()).filter(Boolean),
+      notes: exNotes.trim()
+    };
+    const next = [...exercises, exercise];
+    ftWorkoutStore.save(store => ({ ...store, exercises: next }));
+    setExercises(next);
+    setExName('');
+    setExMuscles('');
+    setExUnit('lb');
+    setExTags('');
+    setExNotes('');
+    setExErr('');
+    window.dispatchEvent(new Event('ft-exercises-changed'));
+  };
+
+  const handleDeleteExercise = id => {
+    const next = exercises.filter(ex => ex.id !== id);
+    ftWorkoutStore.save(store => ({ ...store, exercises: next }));
+    setExercises(next);
+    window.dispatchEvent(new Event('ft-exercises-changed'));
+  };
+
   // Fun facts
   const FUN = [
   'BMI is a screening tool; it cannot distinguish muscle from fat.',
@@ -1624,9 +1680,76 @@ function App() {
       }, "Log \u0026 Progress")),
     /*#__PURE__*/React.createElement("div", {
       id: "wt-exercises",
-      className: "card-grid",
-      hidden: wtTab !== 'wt-exercises'
-    }),
+      hidden: wtTab !== 'wt-exercises',
+      className: "space-y-4"
+    }, /*#__PURE__*/React.createElement("form", {
+      className: "card p-4 space-y-2",
+      onSubmit: handleAddExercise
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "grid gap-2"
+    }, /*#__PURE__*/React.createElement("input", {
+      className: "field",
+      placeholder: "Name",
+      value: exName,
+      onChange: e => setExName(e.target.value)
+    }), /*#__PURE__*/React.createElement("input", {
+      className: "field",
+      placeholder: "Muscle groups (comma separated)",
+      value: exMuscles,
+      onChange: e => setExMuscles(e.target.value)
+    }), /*#__PURE__*/React.createElement("select", {
+      className: "field",
+      value: exUnit,
+      onChange: e => setExUnit(e.target.value)
+    }, /*#__PURE__*/React.createElement("option", { value: "lb" }, "lb"), /*#__PURE__*/React.createElement("option", { value: "kg" }, "kg"), /*#__PURE__*/React.createElement("option", { value: "bodyweight" }, "bodyweight")), /*#__PURE__*/React.createElement("input", {
+      className: "field",
+      placeholder: "Tags (comma separated)",
+      value: exTags,
+      onChange: e => setExTags(e.target.value)
+    }), /*#__PURE__*/React.createElement("textarea", {
+      className: "field",
+      placeholder: "Notes",
+      rows: "2",
+      value: exNotes,
+      onChange: e => setExNotes(e.target.value)
+    })), exErr && /*#__PURE__*/React.createElement("div", {
+      className: "text-sm text-red-600"
+    }, exErr), /*#__PURE__*/React.createElement("div", {
+      className: "text-right"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "submit",
+      className: "kbd"
+    }, "Add Exercise"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex"
+    }, /*#__PURE__*/React.createElement("input", {
+      className: "field flex-1",
+      placeholder: "Search",
+      value: exSearch,
+      onChange: e => setExSearch(e.target.value)
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "card-grid"
+    }, filteredExercises.map(ex => /*#__PURE__*/React.createElement("div", {
+      key: ex.id,
+      className: "card p-4 space-y-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-start justify-between"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "font-medium"
+    }, ex.name), ex.muscleGroups.length > 0 && /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-slate-500"
+    }, ex.muscleGroups.join(', '))), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      className: "icon-btn",
+      title: "Delete",
+      onClick: () => handleDeleteExercise(ex.id)
+    }, "\u2715")), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-slate-600"
+    }, "Unit: ", ex.unit), ex.tags.length > 0 && /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-slate-500"
+    }, "Tags: ", ex.tags.join(', ')), ex.notes && /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-slate-500 whitespace-pre-wrap"
+    }, ex.notes))))
+    ),
     /*#__PURE__*/React.createElement("div", {
       id: "wt-programs",
       hidden: wtTab !== 'wt-programs'
