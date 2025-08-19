@@ -968,7 +968,7 @@ function App() {
   const [workouts, setWorkouts] = useState(() => ftWorkoutStore.load().workouts);
   const [prs, setPrs] = useState(() => ftWorkoutStore.load().prs);
 
-  const blankEntry = () => ({ id: uid(), exercise: '', weight: '', reps: '', rpe: '', notes: '' });
+  const blankEntry = () => ({ id: uid(), exercise: '', muscleGroup: '', weight: '', reps: '', rpe: '', notes: '' });
   const [logDate, setLogDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [logProgram, setLogProgram] = useState('');
   const [logWeek, setLogWeek] = useState('');
@@ -976,6 +976,8 @@ function App() {
   const [logEntries, setLogEntries] = useState([blankEntry()]);
   const [logSearch, setLogSearch] = useState('');
   const [logExFilter, setLogExFilter] = useState('');
+  const [logMgFilter, setLogMgFilter] = useState('');
+  const muscleGroupOptions = useMemo(() => Array.from(new Set(exercises.flatMap(ex => ex.muscleGroups || []))), [exercises]);
 
   const filteredExercises = useMemo(() => {
     const term = exSearch.trim().toLowerCase();
@@ -1196,6 +1198,7 @@ function App() {
         return {
           id: uid(),
           exercise: r.exercise,
+          muscleGroup: r.muscleGroup,
           sets: [{
             weight: r.weight,
             reps: r.reps,
@@ -1222,6 +1225,10 @@ function App() {
     return workouts
       .filter(w => {
         if (logExFilter && !(w.entries || []).some(e => e.exercise === logExFilter)) return false;
+        if (logMgFilter && !(w.entries || []).some(e => {
+          const ex = exercises.find(x => x.name === e.exercise);
+          return ex && (ex.muscleGroups || []).includes(logMgFilter);
+        })) return false;
         if (term) {
           const hasNote = (w.entries || []).some(entry =>
             (entry.sets || []).some(set => (set.notes || '').toLowerCase().includes(term))
@@ -1231,7 +1238,7 @@ function App() {
         return true;
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [workouts, logSearch, logExFilter]);
+  }, [workouts, logSearch, logExFilter, logMgFilter, exercises]);
 
   // Fun facts
   const FUN = [
@@ -1443,14 +1450,15 @@ function App() {
 
     React.createElement(Section, { title: "Pick a Tool", right: /*#__PURE__*/React.createElement("span", { className: "text-xs text-slate-500" }, "Everything updates automatically") }, /*#__PURE__*/
     // Display all view tabs including Workout Tracker
-    React.createElement("div", { className: "grid gap-2", style: { gridTemplateColumns: `repeat(${VIEWS.length}, minmax(0,1fr))` } },
+    React.createElement("div", { className: "flex gap-2 overflow-x-auto pb-2" },
     VIEWS.map((v) => /*#__PURE__*/
     React.createElement("button", {
       key: v,
       onClick: () => setView(v),
       className:
       (view === v ? 'bg-slate-900 text-white ' : 'bg-white hover:bg-slate-50 ') +
-      'border rounded-2xl px-3 py-2 text-left transition-colors',
+      'border rounded-2xl px-3 py-2 text-left transition-colors flex-shrink-0',
+      style: { minWidth: '8rem' },
       "data-target": toId(v),
       role: "tab",
       "aria-selected": view === v
@@ -2019,8 +2027,16 @@ function App() {
     }, /*#__PURE__*/React.createElement("select", {
       className: "field flex-1",
       value: row.exercise,
-      onChange: e => updateLogRow(row.id, 'exercise', e.target.value)
-    }, /*#__PURE__*/React.createElement("option", { value: "" }, "Exercise"), exercises.map(ex => /*#__PURE__*/React.createElement("option", { key: ex.id, value: ex.name }, ex.name))), /*#__PURE__*/React.createElement("input", {
+      onChange: e => {
+        const exName = e.target.value;
+        const mg = exercises.find(ex => ex.name === exName)?.muscleGroups?.[0] || '';
+        setLogEntries(rows => rows.map(r => r.id === row.id ? { ...r, exercise: exName, muscleGroup: mg } : r));
+      }
+    }, /*#__PURE__*/React.createElement("option", { value: "" }, "Exercise"), exercises.map(ex => /*#__PURE__*/React.createElement("option", { key: ex.id, value: ex.name }, ex.name))), /*#__PURE__*/React.createElement("select", {
+      className: "field w-36",
+      value: row.muscleGroup,
+      onChange: e => updateLogRow(row.id, 'muscleGroup', e.target.value)
+    }, /*#__PURE__*/React.createElement("option", { value: "" }, "Muscle"), muscleGroupOptions.map(mg => /*#__PURE__*/React.createElement("option", { key: mg, value: mg }, mg))), /*#__PURE__*/React.createElement("input", {
       className: "field w-20",
       placeholder: "Weight",
       value: row.weight,
@@ -2064,7 +2080,11 @@ function App() {
       className: "field",
       value: logExFilter,
       onChange: e => setLogExFilter(e.target.value)
-    }, /*#__PURE__*/React.createElement("option", { value: "" }, "All exercises"), exercises.map(ex => /*#__PURE__*/React.createElement("option", { key: ex.id, value: ex.name }, ex.name)))), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("option", { value: "" }, "All exercises"), exercises.map(ex => /*#__PURE__*/React.createElement("option", { key: ex.id, value: ex.name }, ex.name))), /*#__PURE__*/React.createElement("select", {
+      className: "field",
+      value: logMgFilter,
+      onChange: e => setLogMgFilter(e.target.value)
+    }, /*#__PURE__*/React.createElement("option", { value: "" }, "All muscle groups"), muscleGroupOptions.map(mg => /*#__PURE__*/React.createElement("option", { key: mg, value: mg }, mg)))), /*#__PURE__*/React.createElement("div", {
       className: "space-y-2"
     }, filteredWorkouts.map(w => /*#__PURE__*/React.createElement("div", {
       key: w.id,
