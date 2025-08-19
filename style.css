@@ -206,3 +206,27 @@ button[type="button"]:active { transform: translateY(1px); }
 .fade-slide-in {
   animation: fadeSlide 220ms cubic-bezier(.2,.7,.2,1);
 }
+
+/* Layout helpers */
+.subtabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.5rem;
+}
+
+[hidden]{
+  display:none !important;
+}
+
+.card-grid{
+  display:grid;
+  gap:1rem;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+}
+
+.editor{
+  background:white;
+  border:1px solid rgba(15,23,42,.12);
+  border-radius:12px;
+  padding:1rem;
+}
