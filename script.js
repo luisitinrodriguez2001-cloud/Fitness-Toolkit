@@ -964,6 +964,19 @@ function App() {
   const [progDays, setProgDays] = useState('');
   const [editingProgId, setEditingProgId] = useState(null);
 
+  // Workout log
+  const [workouts, setWorkouts] = useState(() => ftWorkoutStore.load().workouts);
+  const [prs, setPrs] = useState(() => ftWorkoutStore.load().prs);
+
+  const blankEntry = () => ({ id: uid(), exercise: '', weight: '', reps: '', rpe: '', notes: '' });
+  const [logDate, setLogDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [logProgram, setLogProgram] = useState('');
+  const [logWeek, setLogWeek] = useState('');
+  const [logDay, setLogDay] = useState('');
+  const [logEntries, setLogEntries] = useState([blankEntry()]);
+  const [logSearch, setLogSearch] = useState('');
+  const [logExFilter, setLogExFilter] = useState('');
+
   const filteredExercises = useMemo(() => {
     const term = exSearch.trim().toLowerCase();
     return exercises
@@ -1160,6 +1173,65 @@ function App() {
       onClick: () => handleAddBlock(wIdx, dIdx)
     }, "Add Block"))))));
   };
+
+  const addLogRow = () => setLogEntries(rows => [...rows, blankEntry()]);
+  const updateLogRow = (id, field, value) => setLogEntries(rows => rows.map(r => r.id === id ? { ...r, [field]: value } : r));
+  const removeLogRow = id => setLogEntries(rows => rows.filter(r => r.id !== id));
+
+  const handleLogSubmit = e => {
+    e.preventDefault();
+    const entries = logEntries.filter(r => r.exercise);
+    if (entries.length === 0) return;
+    const workout = {
+      id: uid(),
+      date: logDate,
+      program: logProgram,
+      week: logWeek,
+      day: logDay,
+      entries: entries.map(r => {
+        const weight = Number(r.weight);
+        const reps = Number(r.reps);
+        const unit = exercises.find(ex => ex.name === r.exercise)?.unit || 'lb';
+        const e1 = e1RM(weight, reps);
+        return {
+          id: uid(),
+          exercise: r.exercise,
+          sets: [{
+            weight: r.weight,
+            reps: r.reps,
+            rpe: r.rpe,
+            notes: r.notes,
+            unit,
+            e1rm: Number.isFinite(e1) ? e1 : undefined
+          }]
+        };
+      })
+    };
+    const next = ftWorkoutStore.save(store => ({ ...store, workouts: [...store.workouts, workout] }));
+    setWorkouts(next.workouts);
+    setPrs(next.prs);
+    setLogDate(new Date().toISOString().slice(0, 10));
+    setLogProgram('');
+    setLogWeek('');
+    setLogDay('');
+    setLogEntries([blankEntry()]);
+  };
+
+  const filteredWorkouts = useMemo(() => {
+    const term = logSearch.trim().toLowerCase();
+    return workouts
+      .filter(w => {
+        if (logExFilter && !(w.entries || []).some(e => e.exercise === logExFilter)) return false;
+        if (term) {
+          const hasNote = (w.entries || []).some(entry =>
+            (entry.sets || []).some(set => (set.notes || '').toLowerCase().includes(term))
+          );
+          if (!hasNote) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [workouts, logSearch, logExFilter]);
 
   // Fun facts
   const FUN = [
@@ -1915,8 +1987,97 @@ function App() {
     }, editingProgId ? renderProgramEditor() : renderProgramList()),
     /*#__PURE__*/React.createElement("div", {
       id: "wt-log",
-      hidden: wtTab !== 'wt-log'
-    })),
+      hidden: wtTab !== 'wt-log',
+      className: "space-y-4"
+    }, /*#__PURE__*/React.createElement("form", {
+      onSubmit: handleLogSubmit,
+      className: "card p-4 space-y-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-wrap gap-2"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "date",
+      className: "field",
+      value: logDate,
+      onChange: e => setLogDate(e.target.value)
+    }), /*#__PURE__*/React.createElement("select", {
+      className: "field",
+      value: logProgram,
+      onChange: e => setLogProgram(e.target.value)
+    }, /*#__PURE__*/React.createElement("option", { value: "" }, "Program"), programs.map(p => /*#__PURE__*/React.createElement("option", { key: p.id, value: p.name }, p.name))), /*#__PURE__*/React.createElement("input", {
+      className: "field w-16",
+      placeholder: "Week",
+      value: logWeek,
+      onChange: e => setLogWeek(e.target.value)
+    }), /*#__PURE__*/React.createElement("input", {
+      className: "field w-16",
+      placeholder: "Day",
+      value: logDay,
+      onChange: e => setLogDay(e.target.value)
+    })), logEntries.map(row => /*#__PURE__*/React.createElement("div", {
+      key: row.id,
+      className: "flex gap-1 items-start"
+    }, /*#__PURE__*/React.createElement("select", {
+      className: "field flex-1",
+      value: row.exercise,
+      onChange: e => updateLogRow(row.id, 'exercise', e.target.value)
+    }, /*#__PURE__*/React.createElement("option", { value: "" }, "Exercise"), exercises.map(ex => /*#__PURE__*/React.createElement("option", { key: ex.id, value: ex.name }, ex.name))), /*#__PURE__*/React.createElement("input", {
+      className: "field w-20",
+      placeholder: "Weight",
+      value: row.weight,
+      onChange: e => updateLogRow(row.id, 'weight', e.target.value)
+    }), /*#__PURE__*/React.createElement("input", {
+      className: "field w-16",
+      placeholder: "Reps",
+      value: row.reps,
+      onChange: e => updateLogRow(row.id, 'reps', e.target.value)
+    }), /*#__PURE__*/React.createElement("input", {
+      className: "field w-16",
+      placeholder: "RPE",
+      value: row.rpe,
+      onChange: e => updateLogRow(row.id, 'rpe', e.target.value)
+    }), /*#__PURE__*/React.createElement("input", {
+      className: "field flex-1",
+      placeholder: "Notes",
+      value: row.notes,
+      onChange: e => updateLogRow(row.id, 'notes', e.target.value)
+    }), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      className: "icon-btn",
+      onClick: () => removeLogRow(row.id)
+    }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex justify-between pt-2"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      className: "px-2 py-1 border rounded text-xs",
+      onClick: addLogRow
+    }, "Add Row"), /*#__PURE__*/React.createElement("button", {
+      type: "submit",
+      className: "kbd"
+    }, "Save Workout"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-wrap gap-2"
+    }, /*#__PURE__*/React.createElement("input", {
+      className: "field flex-1",
+      placeholder: "Search notes",
+      value: logSearch,
+      onChange: e => setLogSearch(e.target.value)
+    }), /*#__PURE__*/React.createElement("select", {
+      className: "field",
+      value: logExFilter,
+      onChange: e => setLogExFilter(e.target.value)
+    }, /*#__PURE__*/React.createElement("option", { value: "" }, "All exercises"), exercises.map(ex => /*#__PURE__*/React.createElement("option", { key: ex.id, value: ex.name }, ex.name)))), /*#__PURE__*/React.createElement("div", {
+      className: "space-y-2"
+    }, filteredWorkouts.map(w => /*#__PURE__*/React.createElement("div", {
+      key: w.id,
+      className: "card p-4 space-y-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-sm font-medium"
+    }, w.date, w.program ? ` \u00b7 ${w.program}` : '', w.week && w.day ? ` \u00b7 W${w.week}D${w.day}` : ''), w.entries && w.entries.map(entry => (entry.sets || []).map((set, idx) => /*#__PURE__*/React.createElement("div", {
+      key: entry.id + '-' + idx,
+      className: "text-sm"
+    }, `${entry.exercise}: ${set.weight}${set.unit} x ${set.reps}${set.rpe ? ' @RPE ' + set.rpe : ''}${Number.isFinite(set.e1rm) ? ' (e1RM ' + set.e1rm.toFixed(2) + ')' : ''}${set.notes ? ' - ' + set.notes : ''}`)))), filteredWorkouts.length === 0 && /*#__PURE__*/React.createElement("div", {
+      className: "text-sm text-slate-500"
+    }, "No workouts")))
+    )),
 
     view === 'Info' && /*#__PURE__*/
     React.createElement(React.Fragment, null, /*#__PURE__*/
