@@ -28,15 +28,101 @@ const loadWorkoutStore = () => {
   }
 };
 
+// Compute personal records from workouts
+function computePRs(workouts) {
+  const prs = {};
+  workouts.forEach(w => {
+    (w.entries || []).forEach(entry => {
+      const ex = entry.exercise;
+      if (!ex) return;
+      const sets = entry.sets || [];
+      sets.forEach(set => {
+        const weight = Number(set.weight);
+        const reps = Number(set.reps);
+        const est = e1RM(weight, reps);
+        const cur = prs[ex] || { e1rm: 0, weight: 0, reps: 0 };
+        if (Number.isFinite(est) && est > cur.e1rm) {
+          cur.e1rm = est;
+          cur.weight = weight;
+          cur.reps = reps;
+        }
+        if (Number.isFinite(weight) && weight > cur.weight) cur.weight = weight;
+        if (Number.isFinite(reps) && reps > cur.reps) cur.reps = reps;
+        prs[ex] = cur;
+      });
+    });
+  });
+  return prs;
+}
+
+// Export current store as JSON string
+function exportJSON() {
+  return JSON.stringify(loadWorkoutStore(), null, 2);
+}
+
+// Import and validate JSON, recompute PRs
+function importJSON(text) {
+  const required = ['exercises', 'programs', 'workouts', 'prs'];
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    throw new Error('Invalid JSON');
+  }
+  if (!required.every(k => Object.prototype.hasOwnProperty.call(data, k))) {
+    throw new Error('Missing keys');
+  }
+  const safe = {
+    exercises: Array.isArray(data.exercises) ? data.exercises : [],
+    programs: Array.isArray(data.programs) ? data.programs : [],
+    workouts: Array.isArray(data.workouts) ? data.workouts : []
+  };
+  safe.prs = computePRs(safe.workouts);
+  localStorage.setItem(FT_STORE_KEY, JSON.stringify(safe));
+  return safe;
+}
+
+// Flatten workouts into CSV
+function exportCSV() {
+  const { workouts } = loadWorkoutStore();
+  const rows = [['date','program','week','day','exercise','set','weight','unit','reps','rpe','e1rm','notes']];
+  workouts.forEach(w => {
+    const { date='', program='', week='', day='', entries=[] } = w || {};
+    entries.forEach(entry => {
+      const ex = entry.exercise || '';
+      (entry.sets || []).forEach((set, idx) => {
+        const weight = set.weight ?? '';
+        const reps = set.reps ?? '';
+        const e1 = e1RM(weight, reps);
+        rows.push([
+          date,
+          program,
+          week,
+          day,
+          ex,
+          idx + 1,
+          weight,
+          set.unit ?? '',
+          reps,
+          set.rpe ?? '',
+          Number.isFinite(e1) ? e1.toFixed(2) : '',
+          (set.notes || '').replace(/\n/g, ' ')
+        ]);
+      });
+    });
+  });
+  return rows.map(r => r.map(v => (`${v}`).replace(/"/g, '""')).map(v => `"${v}"`).join(',')).join('\n');
+}
+
 const saveWorkoutStore = updater => {
   const current = loadWorkoutStore();
   const next = typeof updater === 'function' ? updater(current) : updater;
   const safe = {
     exercises: Array.isArray(next.exercises) ? next.exercises : [],
     programs: Array.isArray(next.programs) ? next.programs : [],
-    workouts: Array.isArray(next.workouts) ? next.workouts : [],
-    prs: next.prs && typeof next.prs === 'object' && !Array.isArray(next.prs) ? next.prs : {}
+    workouts: Array.isArray(next.workouts) ? next.workouts : []
   };
+  safe.prs = computePRs(safe.workouts);
   localStorage.setItem(FT_STORE_KEY, JSON.stringify(safe));
   return safe;
 };
@@ -44,6 +130,9 @@ const saveWorkoutStore = updater => {
 window.ftWorkoutStore = {
   load: loadWorkoutStore,
   save: saveWorkoutStore,
+  exportJSON,
+  importJSON,
+  exportCSV,
   key: FT_STORE_KEY
 };
 
@@ -60,6 +149,24 @@ const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 const pInt = v => Number.parseInt(v, 10);
 const pFloat = v => Number.parseFloat(v);
 const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+// Compact unique ID helper (base36 timestamp)
+const uid = (() => {
+  let last = 0;
+  return () => {
+    const now = Date.now();
+    last = now > last ? now : last + 1;
+    return last.toString(36);
+  };
+})();
+
+// Epley estimated 1RM with sanity checks
+const e1RM = (weight, reps) => {
+  const w = Number(weight);
+  const r = Number(reps);
+  if (!(Number.isFinite(w) && Number.isFinite(r) && w > 0 && r > 0)) return NaN;
+  return w * (1 + r / 30);
+};
 
 /* =========================================================
    Metrics
@@ -876,6 +983,44 @@ function App() {
     if (view === 'Workout Tracker') setWtTab('wt-exercises');
   }, [view]);
 
+  // Workout store helpers
+  const handleExportJSON = () => {
+    const data = ftWorkoutStore.exportJSON();
+    const blob = new Blob([data], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'workout-store.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const handleImportJSON = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try { ftWorkoutStore.importJSON(reader.result); location.reload(); }
+        catch (err) { alert('Import failed'); }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  const handleExportCSV = () => {
+    const data = ftWorkoutStore.exportCSV();
+    const blob = new Blob([data], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'workouts.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   // Unit sync on toggle
   useEffect(() => {
     if (unit === 'imperial') {
@@ -1457,7 +1602,7 @@ function App() {
     view === 'Workout Tracker' && /*#__PURE__*/React.createElement(Section, {
       id: toId('Workout Tracker'),
       title: 'Workout Tracker',
-      right: /*#__PURE__*/React.createElement("div", { className: "flex gap-2" }, /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 border rounded" }, "Export JSON"), /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 border rounded" }, "Import JSON"), /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 border rounded" }, "Export CSV"))
+      right: /*#__PURE__*/React.createElement("div", { className: "flex gap-2" }, /*#__PURE__*/React.createElement("button", { onClick: handleExportJSON, className: "px-2 py-1 border rounded" }, "Export JSON"), /*#__PURE__*/React.createElement("button", { onClick: handleImportJSON, className: "px-2 py-1 border rounded" }, "Import JSON"), /*#__PURE__*/React.createElement("button", { onClick: handleExportCSV, className: "px-2 py-1 border rounded" }, "Export CSV"))
     }, /*#__PURE__*/React.createElement("div", { className: "subtabs mb-4", role: "tablist" }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setWtTab('wt-exercises'),
       className: (wtTab === 'wt-exercises' ? 'bg-slate-900 text-white ' : 'bg-white hover:bg-slate-50 ') + 'border rounded px-3 py-1 text-sm',
